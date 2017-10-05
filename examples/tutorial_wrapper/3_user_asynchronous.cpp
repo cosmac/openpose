@@ -31,8 +31,12 @@
 DEFINE_int32(logging_level,             3,              "The logging level. Integer in the range [0, 255]. 0 will output any log() message, while"
                                                         " 255 will not output any. Current OpenPose library messages are in the range 0-4: 1 for"
                                                         " low priority messages and 4 for important ones.");
+DEFINE_bool(print_points,           false,              "If enabled, print pose keypoints in the terminal.");
 // Producer
-DEFINE_string(image_dir,                "examples/media/",      "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
+DEFINE_string(image_dir,         "examples/media/",     "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
+DEFINE_uint64(frame_first,              0,              "Start on desired frame number. Indexes are 0-based, i.e. the first frame has index 0.");
+DEFINE_uint64(frame_last,              -1,              "Finish on desired frame number. Select -1 to disable. Indexes are 0-based, e.g. if set to"
+                                                        " 10, it will process 11 frames (0-10).");
 // OpenPose
 DEFINE_string(model_folder,             "models/",      "Folder path (absolute or relative) where the models (pose, face, ...) are located.");
 DEFINE_string(output_resolution,        "-1x-1",        "The image resolution (display and output). Use \"-1x-1\" to force the program to use the"
@@ -166,9 +170,9 @@ class UserInputClass
 {
 public:
     UserInputClass(const std::string& directoryPath) :
-        mImageFiles{op::getFilesOnDirectory(directoryPath, "jpg")},
-        // mImageFiles{op::getFilesOnDirectory(directoryPath, std::vector<std::string>{"jpg", "png"})}, // If we want "jpg" + "png" images
-        mCounter{0},
+        //mImageFiles{op::getFilesOnDirectory(directoryPath, "jpg")},
+        mImageFiles{op::getFilesOnDirectory(directoryPath, std::vector<std::string>{"jpg", "png", "binary"})}, // If we want "jpg" + "png" images
+        mCounter{FLAGS_frame_first},
         mClosed{false}
     {
         if (mImageFiles.empty())
@@ -193,7 +197,17 @@ public:
             auto& datum = datumsPtr->at(0);
 
             // Fill datum
-            datum.cvInputData = cv::imread(mImageFiles.at(mCounter++));
+            datum.cvInputData = cv::imread(mImageFiles.at(mCounter));
+            if (datum.cvInputData.empty()) {
+                // Failed to read using openCV, try to read binary file
+                FILE* pFile = fopen(mImageFiles.at(mCounter).c_str(), "rb");
+                if (pFile) {
+                    datum.cvInputData = cv::Mat(1080, 1920, CV_8UC3);
+                    fread(datum.cvInputData.data, 1, 1920*1080*3, pFile);
+                    fclose(pFile);
+                }
+            }
+            ++mCounter;
 
             // If empty frame -> return nullptr
             if (datum.cvInputData.empty())
@@ -370,7 +384,7 @@ int openPoseTutorialWrapper1()
             if (successfullyEmplaced && opWrapper.waitAndPop(datumProcessed))
             {
                 userWantsToExit = userOutputClass.display(datumProcessed);
-                userOutputClass.printKeypoints(datumProcessed);
+                if (FLAGS_print_points) userOutputClass.printKeypoints(datumProcessed);
             }
             else
                 op::log("Processed datum could not be emplaced.", op::Priority::High, __LINE__, __FUNCTION__, __FILE__);
