@@ -32,7 +32,24 @@ DEFINE_int32(logging_level,             3,              "The logging level. Inte
                                                         " 255 will not output any. Current OpenPose library messages are in the range 0-4: 1 for"
                                                         " low priority messages and 4 for important ones.");
 // Producer
-DEFINE_string(image_dir,                "examples/media/",      "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
+DEFINE_string(image_dir, "examples/media/",             "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
+DEFINE_string(video,                    "",             "Use a video file instead of the camera. Use `examples/media/video.avi` for our default"
+                                                        " example video.");
+DEFINE_string(ip_camera,                "",             "String with the IP camera URL. It supports protocols like RTSP and HTTP.");
+DEFINE_int32(camera,                    -1,             "The camera index for cv::VideoCapture. Integer in the range [0, 9]. Select a negative"
+                                                        " number (by default), to auto-detect and open the first available camera.");
+DEFINE_string(camera_resolution,        "1280x720",     "Size of the camera frames to ask for.");
+DEFINE_double(camera_fps,               30.0,           "Frame rate for the webcam (only used when saving video from webcam). Set this value to the"
+                                                        " minimum value between the OpenPose displayed speed and the webcam real frame rate.");
+DEFINE_uint64(frame_first,              0,              "Start on desired frame number. Indexes are 0-based, i.e. the first frame has index 0.");
+DEFINE_uint64(frame_last,              -1,              "Finish on desired frame number. Select -1 to disable. Indexes are 0-based, e.g. if set to"
+                                                        " 10, it will process 11 frames (0-10).");
+DEFINE_bool(frame_flip,             false,              "Flip/mirror each frame (e.g. for real time webcam demonstrations).");
+DEFINE_int32(frame_rotate,              0,              "Rotate each frame, 4 possible values: 0, 90, 180, 270.");
+DEFINE_bool(frames_repeat,          false,              "Repeat frames when finished.");
+DEFINE_bool(process_real_time,      false,              "Enable to keep the original source frame rate (e.g. for video). If the processing time is"
+                                                        " too long, it will skip frames. If it is too fast, it will slow it down.");
+
 // OpenPose
 DEFINE_string(model_folder,             "models/",      "Folder path (absolute or relative) where the models (pose, face, ...) are located.");
 DEFINE_string(output_resolution,        "-1x-1",        "The image resolution (display and output). Use \"-1x-1\" to force the program to use the"
@@ -103,6 +120,7 @@ DEFINE_int32(part_to_show,              0,              "Prediction channel to v
 DEFINE_bool(disable_blending,           false,          "If enabled, it will render the results (keypoint skeletons or heatmaps) on a black"
                                                         " background, instead of being rendered into the original image. Related: `part_to_show`,"
                                                         " `alpha_pose`, and `alpha_pose`.");
+DEFINE_bool(activate_gui,               false,          "If enabled, it will display the GUI window.");
 // OpenPose Rendering Pose
 DEFINE_double(render_threshold,         0.05,           "Only estimated keypoints whose score confidences are higher than this threshold will be"
                                                         " rendered. Generally, a high threshold (> 0.5) will only render very clear body parts;"
@@ -166,8 +184,8 @@ class WUserInput : public op::WorkerProducer<std::shared_ptr<std::vector<UserDat
 {
 public:
     WUserInput(const std::string& directoryPath) :
-        mImageFiles{op::getFilesOnDirectory(directoryPath, "jpg")},
-        // mImageFiles{op::getFilesOnDirectory(directoryPath, std::vector<std::string>{"jpg", "png"})}, // If we want "jpg" + "png" images
+        //mImageFiles{op::getFilesOnDirectory(directoryPath, "png")},
+        mImageFiles{op::getFilesOnDirectory(directoryPath, std::vector<std::string>{"jpg", "png"})}, // If we want "jpg" + "png" images
         mCounter{0}
     {
         if (mImageFiles.empty())
@@ -351,6 +369,9 @@ int openPoseTutorialWrapper2()
     const auto faceNetInputSize = op::flagsToPoint(FLAGS_face_net_resolution, "368x368 (multiples of 16)");
     // handNetInputSize
     const auto handNetInputSize = op::flagsToPoint(FLAGS_hand_net_resolution, "368x368 (multiples of 16)");
+    // producerType
+    const auto producerSharedPtr = op::flagsToProducer(FLAGS_image_dir, FLAGS_video, FLAGS_ip_camera, FLAGS_camera,
+                                                       FLAGS_camera_resolution, FLAGS_camera_fps);
     // poseModel
     const auto poseModel = op::flagsToPoseModel(FLAGS_model_pose);
     // keypointScale
@@ -364,22 +385,24 @@ int openPoseTutorialWrapper2()
 
     // Initializing the user custom classes
     // Frames producer (e.g. video, webcam, ...)
-    auto wUserInput = std::make_shared<WUserInput>(FLAGS_image_dir);
+    //auto wUserInput = std::make_shared<WUserInput>(FLAGS_image_dir);
     // Processing
-    auto wUserPostProcessing = std::make_shared<WUserPostProcessing>();
+    //auto wUserPostProcessing = std::make_shared<WUserPostProcessing>();
     // GUI (Display)
     auto wUserOutput = std::make_shared<WUserOutput>();
 
     op::Wrapper<std::vector<UserDatum>> opWrapper;
     // Add custom input
-    const auto workerInputOnNewThread = false;
-    opWrapper.setWorkerInput(wUserInput, workerInputOnNewThread);
+    //const auto workerInputOnNewThread = false;
+    //opWrapper.setWorkerInput(wUserInput, workerInputOnNewThread);
     // Add custom processing
-    const auto workerProcessingOnNewThread = false;
-    opWrapper.setWorkerPostProcessing(wUserPostProcessing, workerProcessingOnNewThread);
+    //const auto workerProcessingOnNewThread = false;
+    //opWrapper.setWorkerPostProcessing(wUserPostProcessing, workerProcessingOnNewThread);
     // Add custom output
-    const auto workerOutputOnNewThread = true;
-    opWrapper.setWorkerOutput(wUserOutput, workerOutputOnNewThread);
+    if (FLAGS_activate_gui) {
+        const auto workerOutputOnNewThread = true;
+        opWrapper.setWorkerOutput(wUserOutput, workerOutputOnNewThread);
+    }
     // Configure OpenPose
     op::log("Configuring OpenPose wrapper.", op::Priority::Low, __LINE__, __FUNCTION__, __FILE__);
     const op::WrapperStructPose wrapperStructPose{!FLAGS_body_disable, netInputSize, outputSize, keypointScale, FLAGS_num_gpu,
@@ -395,6 +418,9 @@ int openPoseTutorialWrapper2()
     const op::WrapperStructHand wrapperStructHand{FLAGS_hand, handNetInputSize, FLAGS_hand_scale_number, (float)FLAGS_hand_scale_range,
                                                   FLAGS_hand_tracking, op::flagsToRenderMode(FLAGS_hand_render, FLAGS_render_pose),
                                                   (float)FLAGS_hand_alpha_pose, (float)FLAGS_hand_alpha_heatmap, (float)FLAGS_hand_render_threshold};
+    // Producer (use default to disable any input)
+    const op::WrapperStructInput wrapperStructInput{producerSharedPtr, FLAGS_frame_first, FLAGS_frame_last, FLAGS_process_real_time,
+                                                    FLAGS_frame_flip, FLAGS_frame_rotate, FLAGS_frames_repeat };
     // Consumer (comment or use default argument to disable any output)
     const bool displayGui = false;
     const bool guiVerbose = false;
@@ -404,7 +430,7 @@ int openPoseTutorialWrapper2()
                                                       FLAGS_write_coco_json, FLAGS_write_images, FLAGS_write_images_format, FLAGS_write_video,
                                                       FLAGS_write_heatmaps, FLAGS_write_heatmaps_format};
     // Configure wrapper
-    opWrapper.configure(wrapperStructPose, wrapperStructFace, wrapperStructHand, op::WrapperStructInput{}, wrapperStructOutput);
+    opWrapper.configure(wrapperStructPose, wrapperStructFace, wrapperStructHand, wrapperStructInput, wrapperStructOutput);
     // Set to single-thread running (e.g. for debugging purposes)
     // opWrapper.disableMultiThreading();
 
