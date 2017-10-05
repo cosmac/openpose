@@ -1,0 +1,36 @@
+## Dataset config
+--image_dir=F:/GWU/Datasets/Dataset_2017-09-11_11-32/
+--write_keypoint=F:/GWU/Datasets/Dataset_2017-09-11_11-32/skeletons/
+--frame_first=500
+##--frame_last=
+
+## Models used
+--model_folder=E:/MyStuff/GWU/Research/openpose/models
+						## Open pose folder with all models
+--body_disable=0
+						## 1 - without, 0 - with pose key-points
+--model_pose=COCO
+						## COCO, MPI, MPI_4_layers
+--face=1
+						## 1 - with, 0 - without face key-points
+--hand=0
+						## 1 - with, 0 - without hand key-points
+
+## Prediction score thresholds
+--render_threshold=0.05
+						## Only estimated key-points whose score confidences are higher than this
+						## threshold will be rendered. Generally, a high threshold (> 0.5) will
+						## only render very clear body parts, while small thresholds (~0.1) will
+						## also output guessed and occluded key-points, but also more FP
+--face_render_threshold=0.4
+						## Analogous to render_threshold, but applied to the face key-points
+--hand_render_threshold=0.2
+						## Analogous to render_threshold, but applied to the hand key-points
+
+## Debugging
+--logging_level=3
+						## 0 - all, 255 non printed messages
+--activate_gui=1
+						## 1 - with, 0 - without GUI
+--print_points=1
+						## 1 - with, 0 -without key-points console print
