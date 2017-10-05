@@ -30,7 +30,7 @@
 ## Debugging
 --logging_level=3
 						## 0 - all, 255 non printed messages
---activate_gui=1
+--activate_gui=0
 						## 1 - with, 0 - without GUI
---print_points=1
+--print_points=0
 						## 1 - with, 0 -without key-points console print

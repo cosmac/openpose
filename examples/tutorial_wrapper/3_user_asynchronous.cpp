@@ -32,6 +32,7 @@ DEFINE_int32(logging_level,             3,              "The logging level. Inte
                                                         " 255 will not output any. Current OpenPose library messages are in the range 0-4: 1 for"
                                                         " low priority messages and 4 for important ones.");
 DEFINE_bool(print_points,           false,              "If enabled, print pose keypoints in the terminal.");
+DEFINE_bool(activate_gui,           false,              "If enabled, it will display the GUI window.");
 // Producer
 DEFINE_string(image_dir,         "examples/media/",     "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
 DEFINE_uint64(frame_first,              0,              "Start on desired frame number. Indexes are 0-based, i.e. the first frame has index 0.");
@@ -181,6 +182,10 @@ public:
 
     std::shared_ptr<std::vector<UserDatum>> createDatum()
     {
+        // Current frame ID
+        std::stringstream message;
+        message << "Processing frame " << mCounter << "(out of " << mImageFiles.size() << ")";
+        op::log(message.str(), op::Priority::High);
         // Close program when empty frame
         if (mClosed || mImageFiles.size() <= mCounter)
         {
@@ -383,8 +388,12 @@ int openPoseTutorialWrapper1()
             std::shared_ptr<std::vector<UserDatum>> datumProcessed;
             if (successfullyEmplaced && opWrapper.waitAndPop(datumProcessed))
             {
-                userWantsToExit = userOutputClass.display(datumProcessed);
-                if (FLAGS_print_points) userOutputClass.printKeypoints(datumProcessed);
+                if (FLAGS_activate_gui) {
+                    userWantsToExit = userOutputClass.display(datumProcessed);
+                }
+                if (FLAGS_print_points) {
+                    userOutputClass.printKeypoints(datumProcessed);
+                }
             }
             else
                 op::log("Processed datum could not be emplaced.", op::Priority::High, __LINE__, __FUNCTION__, __FILE__);
