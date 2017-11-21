@@ -185,7 +185,7 @@ class WUserInput : public op::WorkerProducer<std::shared_ptr<std::vector<UserDat
 public:
     WUserInput(const std::string& directoryPath) :
         //mImageFiles{op::getFilesOnDirectory(directoryPath, "png")},
-        mImageFiles{op::getFilesOnDirectory(directoryPath, std::vector<std::string>{"jpg", "png"})}, // If we want "jpg" + "png" images
+        mImageFiles{op::getFilesOnDirectory(directoryPath, std::vector<std::string>{"jpg", "png", "binary"})}, // If we want "jpg" + "png" images
         mCounter{0}
     {
         if (mImageFiles.empty())

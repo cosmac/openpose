@@ -56,7 +56,7 @@ DEFINE_bool(body_disable,               false,          "Disable body keypoint d
                                                         " keypoint detection.");
 DEFINE_string(model_pose,               "COCO",         "Model to be used. E.g. `COCO` (18 keypoints), `MPI` (15 keypoints, ~10% faster), "
                                                         "`MPI_4_layers` (15 keypoints, even faster but less accurate).");
-DEFINE_string(net_resolution,           "656x368",      "Multiples of 16. If it is increased, the accuracy potentially increases. If it is"
+DEFINE_string(net_resolution,           "-1x528",      "Multiples of 16. If it is increased, the accuracy potentially increases. If it is"
                                                         " decreased, the speed increases. For maximum speed-accuracy balance, it should keep the"
                                                         " closest aspect ratio possible to the images or videos to be processed. Using `-1` in"
                                                         " any of the dimensions, OP will choose the optimal aspect ratio depending on the user's"
@@ -210,6 +210,7 @@ public:
                     datum.cvInputData = cv::Mat(1080, 1920, CV_8UC3);
                     fread(datum.cvInputData.data, 1, 1920*1080*3, pFile);
                     fclose(pFile);
+                    cv::resize(datum.cvInputData, datum.cvInputData, cv::Size(datum.cvInputData.cols / 2, datum.cvInputData.rows / 2));
                 }
             }
             ++mCounter;

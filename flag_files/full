@@ -1,7 +1,7 @@
 ## Dataset config
---image_dir=F:/GWU/Datasets/Dataset_2017-09-11_11-32/
---write_keypoint=F:/GWU/Datasets/Dataset_2017-09-11_11-32/skeletons/
---frame_first=500
+--image_dir=F:/2017-Experiment-1/user_027_experiment_001_2017-11-02_12-33/
+--write_keypoint=F:/2017-Experiment-1/user_027_experiment_001_2017-11-02_12-33/skeletons/
+--frame_first=1
 ##--frame_last=
 
 ## Models used
@@ -30,7 +30,7 @@
 ## Debugging
 --logging_level=3
 						## 0 - all, 255 non printed messages
---activate_gui=0
+--activate_gui=1
 						## 1 - with, 0 - without GUI
 --print_points=0
-						## 1 - with, 0 -without key-points console print
+						## 1 - with, 0 - without key-points console print
