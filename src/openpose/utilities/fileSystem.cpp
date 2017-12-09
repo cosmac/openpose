@@ -148,6 +148,23 @@ namespace op
         }
     }
 
+    struct StringCompare
+    {
+        bool operator()(const std::string& lhs, const std::string& rhs)
+        {
+            // what do we do if lhs or rhs have different sizes
+            if (lhs.size() < rhs.size()) {
+                return true;
+            }
+            else if (lhs.size() > rhs.size()) {
+                return false;
+            }
+            else {
+                return lhs < rhs;
+            }
+        }
+    } StringListComparer;
+
     std::vector<std::string> getFilesOnDirectory(const std::string& directoryPath, const std::vector<std::string>& extensions)
     {
         try
@@ -177,7 +194,7 @@ namespace op
             }
 
             // Sort alphabetically
-            std::sort(filePaths.begin(), filePaths.end());
+            std::sort(filePaths.begin(), filePaths.end(), StringListComparer);
 
             return filePaths;
         }
